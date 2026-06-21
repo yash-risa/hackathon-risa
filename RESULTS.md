@@ -72,4 +72,4 @@ As of the watcher date (2026-06-21), **25 cases** sit on the active worklist (wi
 - **Auth Guardian:** watcher would flag the trigger, but the **suppression check holds it as "do not file – review"** so staff never waste a renewal on a discontinued therapy — and it is never auto-filed.
 
 ---
-*Generated from the deterministic synthetic cohort in `data.js` + `engine.js`. No real PHI.*
+*Aligned with the synthetic cohort and watcher logic reflected in `index.html` (Auth Guardian UI mock). No real PHI.*

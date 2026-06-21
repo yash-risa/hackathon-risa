@@ -1,197 +1,908 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Risa — Auth Guardian</title>
+    <title>RISA · Auth Guardian</title>
+
+    <!--
+      Auth Guardian — standalone, frontend-only mock of the RISA dashboard.
+      Zero-build: open this file directly (file://) or serve the folder.
+      Stack: React 18 + Babel (JSX) + Tailwind from vendor/; Inter from Google Fonts. Data is 100%
+      synthetic, in-memory, and deterministic. No backend, no real API calls,
+      no real PHI.
+    -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script src="vendor/tailwind.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+            },
+            colors: {
+              risaink: '#0b0e14',
+              risapanel: '#0f131b',
+            },
+          },
+        },
+      };
+    </script>
+
+    <script src="vendor/react.development.js"></script>
+    <script src="vendor/react-dom.development.js"></script>
+    <script src="vendor/babel.min.js"></script>
+
     <style>
-      :root {
-        --bg: #0b1220;
-        --panel: #111a2e;
-        --panel-2: #16223c;
-        --line: #233351;
-        --ink: #e8eefb;
-        --muted: #93a4c4;
-        --brand: #4f8cff;
-        --brand-2: #7c5cff;
-        --green: #2fd27a;
-        --amber: #ffb547;
-        --red: #ff5d6c;
-        --slate: #64748b;
-        --radius: 14px;
-        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; }
-      body {
-        background: radial-gradient(1200px 600px at 80% -10%, #18254400, #0b1220 60%), var(--bg);
-        color: var(--ink);
-        font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        min-height: 100vh;
-      }
-      .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 22px 60px; }
-
-      /* Header */
-      header.topbar {
-        display: flex; align-items: center; gap: 14px;
-        padding: 14px 18px; background: linear-gradient(90deg, #14213d, #111a2e);
-        border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
-      }
-      .logo {
-        width: 40px; height: 40px; border-radius: 11px;
-        background: linear-gradient(135deg, var(--brand), var(--brand-2));
-        display: grid; place-items: center; font-weight: 800; color: white; letter-spacing: .5px;
-      }
-      .brand h1 { font-size: 18px; margin: 0; font-weight: 700; }
-      .brand p { margin: 0; color: var(--muted); font-size: 12px; }
-      .topbar .spacer { flex: 1; }
-      .today-pill {
-        background: var(--panel-2); border: 1px solid var(--line); padding: 7px 12px;
-        border-radius: 999px; color: var(--muted); font-size: 12px;
-      }
-      .today-pill b { color: var(--ink); }
-
-      /* Tabs */
-      nav.tabs { display: flex; gap: 8px; margin: 18px 0 16px; flex-wrap: wrap; }
-      nav.tabs button {
-        background: var(--panel); color: var(--muted); border: 1px solid var(--line);
-        padding: 9px 16px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px;
-        transition: all .15s;
-      }
-      nav.tabs button:hover { color: var(--ink); border-color: #2f456b; }
-      nav.tabs button.active { background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: white; border-color: transparent; }
-      .tab-badge { background: rgba(255,255,255,.18); border-radius: 999px; padding: 1px 8px; margin-left: 6px; font-size: 11px; }
-
-      /* Cards / panels */
-      .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
-      .panel .phead { padding: 16px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
-      .phead h2 { margin: 0; font-size: 15px; }
-      .phead .sub { color: var(--muted); font-size: 12px; }
-      .phead .spacer { flex: 1; }
-
-      .btn {
-        border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
-        padding: 7px 13px; border-radius: 9px; cursor: pointer; font-weight: 600; font-size: 12.5px;
-      }
-      .btn:hover { border-color: var(--brand); }
-      .btn.primary { background: linear-gradient(135deg, var(--brand), var(--brand-2)); border-color: transparent; color: white; }
-      .btn.ghost { background: transparent; }
-      .btn.danger { color: var(--red); border-color: #4a2630; }
-      .btn:disabled { opacity: .45; cursor: not-allowed; }
-
-      /* Table */
-      table { width: 100%; border-collapse: collapse; font-size: 13px; }
-      thead th {
-        text-align: left; color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase;
-        letter-spacing: .4px; padding: 11px 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel);
-      }
-      tbody td { padding: 11px 14px; border-bottom: 1px solid #1b2942; vertical-align: middle; }
-      tbody tr:hover { background: #131f38; }
-      .patient b { display: block; }
-      .patient small, .drug small, .payer small { color: var(--muted); }
-      .mono { font-variant-numeric: tabular-nums; }
-
-      .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
-      .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-      .pill.ontrack { color: var(--green); background: rgba(47,210,122,.12); }
-      .pill.atrisk { color: var(--amber); background: rgba(255,181,71,.12); }
-      .pill.lapsed { color: var(--red); background: rgba(255,93,108,.12); }
-      .pill.suppressed { color: #c9a3ff; background: rgba(124,92,255,.14); }
-      .pill.filed { color: var(--brand); background: rgba(79,140,255,.14); }
-      .pill.dismissed { color: var(--slate); background: rgba(100,116,139,.16); }
-
-      .reason-tag { font-size: 11px; color: var(--muted); }
-      .countdown { font-weight: 700; }
-      .countdown.neg { color: var(--red); }
-      .countdown.soon { color: var(--amber); }
-      .countdown.ok { color: var(--green); }
-
-      .rowact { display: flex; gap: 6px; }
-
-      /* Metric cards */
-      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; padding: 18px; }
-      .metric { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 15px; }
-      .metric .label { color: var(--muted); font-size: 12px; }
-      .metric .value { font-size: 26px; font-weight: 800; margin-top: 4px; }
-      .metric .value.good { color: var(--green); }
-      .metric .value.bad { color: var(--red); }
-      .metric .foot { color: var(--muted); font-size: 11px; margin-top: 4px; }
-
-      .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 0 18px 18px; }
-      .compare .col { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-      .compare .col h3 { margin: 0 0 10px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-      .dot { width: 10px; height: 10px; border-radius: 50%; }
-      .barrow { display: grid; grid-template-columns: 130px 1fr 56px; gap: 10px; align-items: center; margin: 10px 0; font-size: 12.5px; }
-      .bar { height: 14px; border-radius: 7px; background: #0d1830; overflow: hidden; }
-      .bar > span { display: block; height: 100%; border-radius: 7px; }
-
-      .assumption { font-size: 11.5px; color: var(--muted); padding: 0 18px 16px; }
-      .assumption code { background: var(--panel-2); padding: 1px 6px; border-radius: 5px; color: #b9c8e6; }
-
-      /* Audit log */
-      .log { padding: 8px 0; max-height: 560px; overflow: auto; }
-      .logitem { display: grid; grid-template-columns: 150px 130px 1fr; gap: 12px; padding: 9px 18px; border-bottom: 1px solid #1b2942; font-size: 12.5px; }
-      .logitem .ts { color: var(--muted); font-variant-numeric: tabular-nums; }
-      .ev { font-weight: 700; }
-      .ev.trigger_detected { color: var(--amber); }
-      .ev.highlighted { color: var(--brand); }
-      .ev.approved { color: var(--green); }
-      .ev.filed { color: #7cd0ff; }
-      .ev.dismissed { color: var(--slate); }
-      .ev.outcome { color: var(--green); }
-
-      /* Timeline */
-      .timeline { padding: 18px; }
-      .tl-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin: 12px 0; }
-      .tl-row .who { font-weight: 700; }
-      .tl-track { position: relative; height: 46px; background: #0d1830; border-radius: 10px; border: 1px solid var(--line); }
-      .empty { padding: 40px; text-align: center; color: var(--muted); }
-
-      .note { background: var(--panel-2); border: 1px dashed var(--line); border-radius: 10px; padding: 14px; white-space: pre-wrap; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #c7d6f5; margin: 0 18px 18px; }
-      .footer { color: var(--muted); font-size: 11.5px; text-align: center; margin-top: 22px; }
-      dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); max-width: 520px; width: 92%; }
-      dialog::backdrop { background: rgba(4,8,16,.6); }
-      dialog h3 { margin-top: 0; }
-      dialog .opts { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
-      dialog .opts label { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
-      dialog .opts label:hover { border-color: var(--brand); }
-      .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; }
+      html, body, #root { height: 100%; }
+      body { background:#f3f4f6; -webkit-font-smoothing: antialiased; }
+      /* Thin, product-like scrollbars */
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius: 8px; border:2px solid transparent; background-clip: padding-box; }
+      ::-webkit-scrollbar-thumb:hover { background:#9ca3af; background-clip: padding-box; }
+      @keyframes ag-toast-in { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0);} }
+      .ag-toast { animation: ag-toast-in .18s ease-out; }
+      @keyframes ag-fade { from { opacity:0 } to { opacity:1 } }
+      .ag-fade { animation: ag-fade .15s ease-out; }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <header class="topbar">
-        <div class="logo">R</div>
-        <div class="brand">
-          <h1>Risa — Auth Guardian</h1>
-          <p>Proactive prior-authorization renewal for oral oncolytics</p>
-        </div>
-        <div class="spacer"></div>
-        <div class="today-pill">Watcher date: <b id="todayLabel">—</b></div>
-      </header>
+    <div id="root"></div>
 
-      <nav class="tabs" id="tabs"></nav>
-      <main id="view"></main>
+    <script type="text/babel" data-presets="react">
+      const { useState, useMemo, useEffect, useRef } = React;
 
-      <div class="footer">
-        100% synthetic, deterministic demo data — no real PHI. Built for the Risa Labs hackathon prototype.
-      </div>
-    </div>
+      /* =====================================================================
+       * SYNTHETIC, IN-MEMORY DATA  (no backend, no real PHI)
+       * Watcher "today" is pinned so the countdown is deterministic.
+       * ===================================================================== */
+      const TODAY = '2026-06-21';
+      const DAY = 24 * 60 * 60 * 1000;
 
-    <dialog id="dismissDialog">
-      <h3>Dismiss case — reason required</h3>
-      <p class="sub" id="dismissCaseLabel" style="color:var(--muted)"></p>
-      <div class="opts" id="dismissOpts"></div>
-      <div class="dlg-actions">
-        <button class="btn ghost" id="dismissCancel">Cancel</button>
-        <button class="btn danger" id="dismissConfirm">Dismiss & log</button>
-      </div>
-    </dialog>
+      const AVG_CLAIM = {
+        palbociclib: 14200, abemaciclib: 13800, ribociclib: 13100, olaparib: 15600,
+        lenalidomide: 18400, enzalutamide: 13900, ibrutinib: 15200, osimertinib: 17300,
+        everolimus: 12100, acalabrutinib: 14700,
+      };
 
-    <!-- Vendor libraries copied locally so the app runs offline from file:// .
-         The UI itself is dependency-free vanilla JS for maximum reliability. -->
-    <script src="data.js"></script>
-    <script src="engine.js"></script>
-    <script src="app.js"></script>
+      // Hand-authored worklist slice: 3 featured cases from RESULTS.md + 22 synthetic.
+      const RAW_ROWS = [
+        // --- Featured (from RESULTS.md) ---
+        { id:'PA-20007', mrn:'2602443', name:'Maria Alvarez', age:58, sex:'F', generic:'palbociclib', brand:'Ibrance', payer:'Humana Gold Plus (MA)', trigger:'Auth expiring', triggerDate:'2026-07-03', suppress:false },
+        { id:'PA-20000', mrn:'2605030', name:'Joseph Hayes', age:49, sex:'M', generic:'acalabrutinib', brand:'Calquence', payer:'Wellcare by Allwell (MA)', trigger:'Auth expiring', triggerDate:'2026-07-15', suppress:false },
+        { id:'PA-20020', mrn:'3520060', name:'Richard Patel', age:80, sex:'M', generic:'abemaciclib', brand:'Verzenio', payer:'Cigna Commercial PPO', trigger:'Insurance expiring', triggerDate:'2026-12-31', suppress:true, suppressLabel:'Disease progressed — off this regimen' },
+        // --- Synthetic continuing / at-risk ---
+        { id:'PA-20031', mrn:'7023165', name:'Linda Carter', age:63, sex:'F', generic:'ribociclib', brand:'Kisqali', payer:'UnitedHealthcare Medicare Advantage', trigger:'Auth expiring', triggerDate:'2026-06-25', suppress:false },
+        { id:'PA-20044', mrn:'3609640', name:'Robert Foster', age:71, sex:'M', generic:'enzalutamide', brand:'Xtandi', payer:'Aetna Medicare Advantage', trigger:'Auth expiring', triggerDate:'2026-07-01', suppress:false },
+        { id:'PA-20052', mrn:'7099822', name:'Patricia Diaz', age:66, sex:'F', generic:'olaparib', brand:'Lynparza', payer:'Anthem BCBS Commercial', trigger:'Insurance expiring', triggerDate:'2026-07-05', suppress:false },
+        { id:'PA-20063', mrn:'8041419', name:'Susan Bennett', age:59, sex:'F', generic:'palbociclib', brand:'Ibrance', payer:'Cigna Commercial PPO', trigger:'Auth expiring', triggerDate:'2026-07-10', suppress:false },
+        { id:'PA-20071', mrn:'8187127', name:'Michael Owens', age:74, sex:'M', generic:'ibrutinib', brand:'Imbruvica', payer:'Humana Gold Plus (MA)', trigger:'Auth expiring', triggerDate:'2026-07-18', suppress:false },
+        { id:'PA-20088', mrn:'6040096', name:'Karen Lopez', age:61, sex:'F', generic:'abemaciclib', brand:'Verzenio', payer:'UnitedHealthcare Commercial', trigger:'Regimen change', triggerDate:'2026-07-20', suppress:false, regimenChange:true },
+        { id:'PA-20094', mrn:'7833884', name:'William Reed', age:69, sex:'M', generic:'osimertinib', brand:'Tagrisso', payer:'Aetna Commercial', trigger:'Auth expiring', triggerDate:'2026-07-28', suppress:false },
+        { id:'PA-20102', mrn:'3417755', name:'Nancy Silva', age:57, sex:'F', generic:'lenalidomide', brand:'Revlimid', payer:'Wellcare by Allwell (MA)', trigger:'Auth expiring', triggerDate:'2026-08-15', suppress:false },
+        { id:'PA-20111', mrn:'9120634', name:'David Kim', age:65, sex:'M', generic:'everolimus', brand:'Afinitor', payer:'Anthem BCBS Commercial', trigger:'Insurance expiring', triggerDate:'2026-09-01', suppress:false },
+        { id:'PA-20119', mrn:'2244781', name:'Donna Torres', age:62, sex:'F', generic:'ribociclib', brand:'Kisqali', payer:'Humana Gold Plus (MA)', trigger:'Auth expiring', triggerDate:'2026-06-10', suppress:false },
+        { id:'PA-20126', mrn:'5560148', name:'Charles Murphy', age:77, sex:'M', generic:'enzalutamide', brand:'Xtandi', payer:'UnitedHealthcare Medicare Advantage', trigger:'Auth expiring', triggerDate:'2026-05-30', suppress:false },
+        { id:'PA-20134', mrn:'6612090', name:'Carol Nguyen', age:60, sex:'F', generic:'olaparib', brand:'Lynparza', payer:'Cigna Commercial PPO', trigger:'Insurance expiring', triggerDate:'2026-07-02', suppress:false },
+        { id:'PA-20141', mrn:'7781002', name:'Thomas Walsh', age:72, sex:'M', generic:'ibrutinib', brand:'Imbruvica', payer:'Aetna Medicare Advantage', trigger:'Auth expiring', triggerDate:'2026-07-08', suppress:false },
+        { id:'PA-20149', mrn:'8890231', name:'Sandra Quinn', age:64, sex:'F', generic:'palbociclib', brand:'Ibrance', payer:'Anthem BCBS Commercial', trigger:'Auth expiring', triggerDate:'2026-07-12', suppress:false },
+        { id:'PA-20156', mrn:'1209887', name:'Gary Vance', age:70, sex:'M', generic:'acalabrutinib', brand:'Calquence', payer:'Humana Gold Plus (MA)', trigger:'Auth expiring', triggerDate:'2026-07-22', suppress:false },
+        { id:'PA-20163', mrn:'3345610', name:'Ruth Iverson', age:58, sex:'F', generic:'everolimus', brand:'Afinitor', payer:'UnitedHealthcare Commercial', trigger:'Insurance expiring', triggerDate:'2026-08-31', suppress:false },
+        { id:'PA-20171', mrn:'4456120', name:'Frank Jensen', age:75, sex:'M', generic:'osimertinib', brand:'Tagrisso', payer:'Wellcare by Allwell (MA)', trigger:'Auth expiring', triggerDate:'2026-06-30', suppress:false },
+        { id:'PA-20178', mrn:'5567231', name:'Sharon Ellis', age:56, sex:'F', generic:'lenalidomide', brand:'Revlimid', payer:'Aetna Commercial', trigger:'Regimen change', triggerDate:'2026-07-16', suppress:false, regimenChange:true },
+        { id:'PA-20185', mrn:'6678342', name:'Joseph Gomez', age:68, sex:'M', generic:'enzalutamide', brand:'Xtandi', payer:'Cigna Commercial PPO', trigger:'Insurance expiring', triggerDate:'2026-12-31', suppress:true, suppressLabel:'Patient transferred to another practice' },
+        { id:'PA-20192', mrn:'7789453', name:'Deborah Reed', age:63, sex:'F', generic:'abemaciclib', brand:'Verzenio', payer:'Humana Gold Plus (MA)', trigger:'Auth expiring', triggerDate:'2026-07-06', suppress:false },
+        { id:'PA-20199', mrn:'8890564', name:'John Owens', age:79, sex:'M', generic:'ibrutinib', brand:'Imbruvica', payer:'Aetna Medicare Advantage', trigger:'Auth expiring', triggerDate:'2026-07-25', suppress:true, suppressLabel:'Therapy discontinued (toxicity)' },
+        { id:'PA-20205', mrn:'9901675', name:'Susan Hayes', age:67, sex:'F', generic:'ribociclib', brand:'Kisqali', payer:'UnitedHealthcare Medicare Advantage', trigger:'Auth expiring', triggerDate:'2026-07-14', suppress:false },
+      ];
+
+      /* ---- derived helpers ---- */
+      function daysBetween(fromIso, toIso) {
+        return Math.round((new Date(toIso).getTime() - new Date(fromIso).getTime()) / DAY);
+      }
+      function fmtDate(iso) {
+        const d = new Date(iso);
+        return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+      }
+      function fmtMoney(n) {
+        return '$' + n.toLocaleString('en-US');
+      }
+      function fmtMoneyShort(n) {
+        if (n >= 1000) return '$' + Math.round(n / 1000) + 'K';
+        return '$' + n;
+      }
+
+      function deriveStatus(row) {
+        const daysLeft = daysBetween(TODAY, row.triggerDate);
+        if (row.suppress) return { status: 'Suppressed - review', daysLeft };
+        if (row.workflowState === 'filed') return { status: 'Filed', daysLeft };
+        if (row.workflowState === 'dismissed') return { status: 'Dismissed', daysLeft };
+        if (daysLeft < 0) return { status: 'Lapsed', daysLeft };
+        if (daysLeft <= 30) return { status: 'At risk', daysLeft };
+        return { status: 'On track', daysLeft };
+      }
+
+      function recommendationFor(row) {
+        if (row.suppress) return 'Hold — ' + (row.suppressLabel || 'review continuation');
+        if (row.workflowState === 'filed') return 'Renewal packet filed';
+        if (row.workflowState === 'dismissed') return 'Dismissed — ' + (row.dismissReason || 'reviewer');
+        if (row.regimenChange) return 'Re-verify medical necessity';
+        const dl = daysBetween(TODAY, row.triggerDate);
+        if (dl < 0) return 'File renewal (urgent)';
+        return 'File renewal';
+      }
+
+      /* =====================================================================
+       * Small presentational atoms
+       * ===================================================================== */
+      function Icon({ path, className = 'w-5 h-5', stroke = 1.6, fill = 'none' }) {
+        return (
+          <svg viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth={stroke}
+               strokeLinecap="round" strokeLinejoin="round" className={className}>
+            {path}
+          </svg>
+        );
+      }
+      const ICONS = {
+        worklists: <><path d="M8 6h11M8 12h11M8 18h11"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></>,
+        delivery: <><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></>,
+        calling: <path d="M5 4h3l1.5 4-2 1.5a12 12 0 0 0 5 5L19 16l4 1.5V20a2 2 0 0 1-2 2A16 16 0 0 1 5 6a2 2 0 0 1 0-2z"/>,
+        status: <path d="M3 12h4l2 6 4-14 2 8h6"/>,
+        config: <><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.3l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2.3-1.3l-.3-2.5h-4l-.3 2.5A7 7 0 0 0 7 5.3l-2.3-1-2 3.4 2 1.5A7 7 0 0 0 4.6 12c0 .4 0 .9.1 1.3l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2.3 1.3l.3 2.5h4l.3-2.5a7 7 0 0 0 2.3-1.3l2.3 1 2-3.4-2-1.5c.1-.4.1-.9.1-1.3z"/></>,
+        guardian: <><path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6l7-3z"/><path d="M12 8v4l2.5 1.5"/></>,
+        user: <><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></>,
+        logout: <><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></>,
+        search: <><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></>,
+        filter: <path d="M4 5h16l-6 8v5l-4 2v-7z"/>,
+        refresh: <><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v5h-5"/></>,
+        chevron: <path d="M6 9l6 6 6-6"/>,
+        copy: <><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></>,
+        dots: <><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></>,
+        check: <path d="M5 12l5 5 9-11"/>,
+        x: <path d="M6 6l12 12M18 6L6 18"/>,
+        shieldAlert: <><path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6l7-3z"/><path d="M12 8v4M12 15.5v.01"/></>,
+        clock: <><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></>,
+        dollar: <><path d="M12 3v18"/><path d="M16 7a3.5 3.5 0 0 0-4-3 3.2 3.2 0 0 0 0 6.4 3.2 3.2 0 0 1 0 6.4 3.5 3.5 0 0 1-4-3"/></>,
+        list: <><path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></>,
+      };
+
+      function NavItem({ icon, label, active, onClick }) {
+        return (
+          <button onClick={onClick}
+            className={'w-full flex flex-col items-center gap-1 py-3 rounded-lg transition-colors ' +
+              (active ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5')}>
+            <Icon path={icon} className="w-[22px] h-[22px]" />
+            <span className="text-[10px] leading-none font-medium tracking-tight">{label}</span>
+          </button>
+        );
+      }
+
+      // Filled / soft pill primitives
+      function Badge({ children, tone = 'gray' }) {
+        const tones = {
+          green: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+          gray: 'bg-gray-100 text-gray-500 ring-gray-200',
+          darkfill: 'bg-slate-800 text-white ring-slate-800',
+          red: 'bg-red-50 text-red-700 ring-red-200',
+          amber: 'bg-amber-50 text-amber-700 ring-amber-200',
+          blue: 'bg-blue-50 text-blue-700 ring-blue-200',
+          indigo: 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+          purple: 'bg-purple-50 text-purple-700 ring-purple-200',
+          slate: 'bg-slate-100 text-slate-700 ring-slate-300',
+        };
+        return (
+          <span className={'inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium ring-1 ring-inset ' + (tones[tone] || tones.gray)}>
+            {children}
+          </span>
+        );
+      }
+
+      function TriggerPill({ trigger }) {
+        const map = { 'Auth expiring': 'amber', 'Insurance expiring': 'indigo', 'Regimen change': 'purple' };
+        return <Badge tone={map[trigger] || 'gray'}>{trigger}</Badge>;
+      }
+
+      function StatusPill({ status }) {
+        const map = {
+          'On track': 'green', 'At risk': 'amber', 'Lapsed': 'red',
+          'Suppressed - review': 'slate', 'Filed': 'blue', 'Dismissed': 'gray',
+        };
+        return <Badge tone={map[status] || 'gray'}>{status}</Badge>;
+      }
+
+      function DaysLeft({ days, status }) {
+        if (status === 'Filed') return <span className="text-blue-600 font-semibold text-[13px]">Filed</span>;
+        if (status === 'Suppressed - review') return <span className="text-slate-400 text-[13px]">—</span>;
+        if (days < 0) return <span className="text-red-600 font-semibold text-[13px]">LAPSED <span className="font-normal text-red-400">({Math.abs(days)}d)</span></span>;
+        let cls = 'text-emerald-600';
+        if (days <= 14) cls = 'text-red-600';
+        else if (days <= 30) cls = 'text-amber-600';
+        return <span className={cls + ' font-semibold text-[13px]'}>{days} <span className="font-normal opacity-70">days</span></span>;
+      }
+
+      /* =====================================================================
+       * Topbar building blocks
+       * ===================================================================== */
+      function SearchInput({ value, onChange, placeholder }) {
+        return (
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Icon path={ICONS.search} className="w-4 h-4" />
+            </span>
+            <input
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={placeholder}
+              className="w-[340px] pl-9 pr-3 h-9 rounded-lg border border-gray-300 bg-white text-[13px] text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-slate-200 focus:border-gray-400"
+            />
+          </div>
+        );
+      }
+
+      function FiltersPill({ count = 0 }) {
+        return (
+          <button className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-gray-300 bg-white text-[13px] text-gray-700 hover:bg-gray-50">
+            <Icon path={ICONS.filter} className="w-4 h-4 text-gray-500" />
+            Filters
+            <span className="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-slate-800 text-white text-[10px] font-semibold">{count}</span>
+          </button>
+        );
+      }
+
+      function Dropdown({ label, value, options, onChange }) {
+        const [open, setOpen] = useState(false);
+        const ref = useRef(null);
+        useEffect(() => {
+          function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+          document.addEventListener('mousedown', onDoc);
+          return () => document.removeEventListener('mousedown', onDoc);
+        }, []);
+        return (
+          <div className="relative" ref={ref}>
+            <button onClick={() => setOpen(o => !o)}
+              className="inline-flex items-center gap-2 h-9 px-3 rounded-lg border border-gray-300 bg-white text-[13px] text-gray-700 hover:bg-gray-50">
+              {label && <span className="text-gray-500">{label}:</span>}
+              <span className="font-medium">{value}</span>
+              <Icon path={ICONS.chevron} className="w-4 h-4 text-gray-400" />
+            </button>
+            {open && (
+              <div className="absolute right-0 mt-1 w-52 bg-white rounded-lg border border-gray-200 shadow-lg py-1 z-30 ag-fade">
+                {options.map(opt => (
+                  <button key={opt} onClick={() => { onChange(opt); setOpen(false); }}
+                    className={'w-full text-left px-3 py-1.5 text-[13px] hover:bg-gray-50 ' + (opt === value ? 'text-slate-900 font-medium' : 'text-gray-600')}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function SplitButton({ label, onClick, menu = [] }) {
+        const [open, setOpen] = useState(false);
+        const ref = useRef(null);
+        useEffect(() => {
+          function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+          document.addEventListener('mousedown', onDoc);
+          return () => document.removeEventListener('mousedown', onDoc);
+        }, []);
+        return (
+          <div className="relative inline-flex" ref={ref}>
+            <button onClick={onClick}
+              className="h-9 px-4 rounded-l-lg bg-slate-900 text-white text-[13px] font-medium hover:bg-slate-800">
+              {label}
+            </button>
+            <button onClick={() => setOpen(o => !o)}
+              className="h-9 px-2 rounded-r-lg bg-slate-900 text-white border-l border-white/20 hover:bg-slate-800">
+              <Icon path={ICONS.chevron} className="w-4 h-4" />
+            </button>
+            {open && menu.length > 0 && (
+              <div className="absolute right-0 top-10 w-56 bg-white rounded-lg border border-gray-200 shadow-lg py-1 z-30 ag-fade">
+                {menu.map((m, i) => (
+                  <button key={i} onClick={() => { setOpen(false); m.onClick && m.onClick(); }}
+                    className="w-full text-left px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-50">{m.label}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function IconButton({ icon, onClick, title }) {
+        return (
+          <button onClick={onClick} title={title}
+            className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50">
+            <Icon path={icon} className="w-4 h-4" />
+          </button>
+        );
+      }
+
+      function RowMenu({ items }) {
+        const [open, setOpen] = useState(false);
+        const ref = useRef(null);
+        useEffect(() => {
+          function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+          document.addEventListener('mousedown', onDoc);
+          return () => document.removeEventListener('mousedown', onDoc);
+        }, []);
+        return (
+          <div className="relative" ref={ref}>
+            <button onClick={() => setOpen(o => !o)} className="h-7 w-7 inline-flex items-center justify-center rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+              <Icon path={ICONS.dots} className="w-4 h-4" />
+            </button>
+            {open && (
+              <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg border border-gray-200 shadow-lg py-1 z-40 ag-fade">
+                {items.map((it, i) => (
+                  <button key={i} onClick={() => { setOpen(false); it.onClick && it.onClick(); }}
+                    className={'w-full text-left px-3 py-1.5 text-[13px] hover:bg-gray-50 ' + (it.danger ? 'text-red-600' : 'text-gray-700')}>
+                    {it.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function Checkbox({ checked, onChange, indeterminate }) {
+        const ref = useRef(null);
+        useEffect(() => { if (ref.current) ref.current.indeterminate = !!indeterminate; }, [indeterminate]);
+        return (
+          <input ref={ref} type="checkbox" checked={checked} onChange={onChange}
+            className="w-4 h-4 rounded border-gray-300 text-slate-800 focus:ring-slate-300 cursor-pointer" />
+        );
+      }
+
+      /* =====================================================================
+       * STAT CARDS
+       * ===================================================================== */
+      function StatCard({ label, value, sub, tone = 'slate', icon }) {
+        const accents = {
+          slate: 'text-slate-700 bg-slate-100',
+          red: 'text-red-700 bg-red-100',
+          amber: 'text-amber-700 bg-amber-100',
+          emerald: 'text-emerald-700 bg-emerald-100',
+        };
+        return (
+          <div className="flex-1 min-w-[180px] bg-white rounded-xl border border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-medium text-gray-500">{label}</span>
+              <span className={'inline-flex items-center justify-center w-7 h-7 rounded-lg ' + accents[tone]}>
+                <Icon path={icon} className="w-4 h-4" />
+              </span>
+            </div>
+            <div className="mt-2 text-[26px] leading-none font-semibold text-gray-900">{value}</div>
+            {sub && <div className="mt-1.5 text-[11px] text-gray-400">{sub}</div>}
+          </div>
+        );
+      }
+
+      /* =====================================================================
+       * AUTH GUARDIAN VIEW
+       * ===================================================================== */
+      const PAGE_SIZE = 10;
+
+      function AuthGuardian({ rows, setRows, audit, log, toast, pushToast }) {
+        const [tab, setTab] = useState('worklist'); // worklist | audit
+        const [search, setSearch] = useState('');
+        const [triggerFilter, setTriggerFilter] = useState('All triggers');
+        const [selected, setSelected] = useState(() => new Set());
+        const [page, setPage] = useState(1);
+        const [dismissTarget, setDismissTarget] = useState(null); // single row or 'bulk'
+        const [dismissReason, setDismissReason] = useState('');
+
+        // derived list
+        const filtered = useMemo(() => {
+          const q = search.trim().toLowerCase();
+          return rows.filter(r => {
+            if (triggerFilter !== 'All triggers' && r.trigger !== triggerFilter) return false;
+            if (!q) return true;
+            return (r.name.toLowerCase().includes(q) || r.mrn.includes(q) ||
+                    r.brand.toLowerCase().includes(q) || r.generic.toLowerCase().includes(q) ||
+                    r.payer.toLowerCase().includes(q));
+          });
+        }, [rows, search, triggerFilter]);
+
+        const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+        const safePage = Math.min(page, totalPages);
+        const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+        // stats (over full worklist, not filtered)
+        const stats = useMemo(() => {
+          let onList = 0, exp14 = 0, suppressed = 0, protectedVal = 0;
+          rows.forEach(r => {
+            const { status, daysLeft } = deriveStatus(r);
+            if (status === 'Dismissed') return;
+            onList++;
+            if (r.suppress) suppressed++;
+            if (!r.suppress && daysLeft <= 14) exp14++;
+            if (!r.suppress && status !== 'Lapsed') protectedVal += (AVG_CLAIM[r.generic] || 0);
+          });
+          return { onList, exp14, suppressed, protectedVal };
+        }, [rows]);
+
+        function toggleOne(id) {
+          setSelected(prev => {
+            const n = new Set(prev);
+            n.has(id) ? n.delete(id) : n.add(id);
+            return n;
+          });
+        }
+        const selectableIds = pageRows.filter(r => !r.suppress && r.workflowState !== 'filed' && r.workflowState !== 'dismissed').map(r => r.id);
+        const allSelected = selectableIds.length > 0 && selectableIds.every(id => selected.has(id));
+        const someSelected = selectableIds.some(id => selected.has(id)) && !allSelected;
+        function toggleAll() {
+          setSelected(prev => {
+            const n = new Set(prev);
+            if (allSelected) selectableIds.forEach(id => n.delete(id));
+            else selectableIds.forEach(id => n.add(id));
+            return n;
+          });
+        }
+
+        function approve(ids) {
+          const list = Array.isArray(ids) ? ids : [ids];
+          let filed = 0, blocked = 0;
+          setRows(prev => prev.map(r => {
+            if (!list.includes(r.id)) return r;
+            if (r.suppress) { blocked++; return r; }
+            if (r.workflowState === 'filed' || r.workflowState === 'dismissed') return r;
+            filed++;
+            log('approved', r.id, 'client', 'Client approved renewal for ' + r.brand + ' (' + r.generic + ')');
+            log('filed', r.id, 'system', 'Renewal packet drafted + submitted via CoverMyMeds (filed on time).');
+            return { ...r, workflowState: 'filed' };
+          }));
+          setSelected(prev => { const n = new Set(prev); list.forEach(id => n.delete(id)); return n; });
+          if (filed > 0) pushToast(filed === 1 ? 'Renewal filed — moved to Filed. Logged to audit.' : filed + ' renewals filed and logged to audit.', 'success');
+          if (blocked > 0) pushToast(blocked + ' suppressed case(s) skipped — held for review.', 'warn');
+        }
+
+        function openDismiss(target) { setDismissTarget(target); setDismissReason(''); }
+        function confirmDismiss() {
+          const reason = dismissReason.trim() || 'No reason provided';
+          const ids = dismissTarget === 'bulk' ? Array.from(selected) : [dismissTarget];
+          setRows(prev => prev.map(r => {
+            if (!ids.includes(r.id)) return r;
+            log('dismissed', r.id, 'client', 'Dismissed: ' + reason);
+            return { ...r, workflowState: 'dismissed', dismissReason: reason };
+          }));
+          setSelected(prev => { const n = new Set(prev); ids.forEach(id => n.delete(id)); return n; });
+          setDismissTarget(null);
+          pushToast(ids.length + ' case(s) dismissed with reason. Logged to audit.', 'info');
+        }
+
+        const selectedCount = selected.size;
+
+        return (
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Page header */}
+            <div className="px-7 pt-6 pb-3">
+              <div className="flex items-center gap-2">
+                <h1 className="text-[20px] font-semibold text-gray-900">Auth Guardian — Renewal Worklist</h1>
+                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[11px] font-medium ring-1 ring-inset ring-emerald-200">Proactive</span>
+              </div>
+              <p className="text-[12.5px] text-gray-500 mt-1">Approved oral-oncolytic PAs watched for upcoming auth / insurance lapses · watcher date {fmtDate(TODAY)}</p>
+            </div>
+
+            {/* Stat cards */}
+            <div className="px-7">
+              <div className="flex flex-wrap gap-3">
+                <StatCard label="On worklist" value={stats.onList} sub="active continuity cases" tone="slate" icon={ICONS.list} />
+                <StatCard label="Expiring ≤ 14 days" value={stats.exp14} sub="urgent — file now" tone="red" icon={ICONS.clock} />
+                <StatCard label="Suppressed (review)" value={stats.suppressed} sub="do not auto-file" tone="amber" icon={ICONS.shieldAlert} />
+                <StatCard label="Claim value protected" value={fmtMoneyShort(stats.protectedVal)} sub="monthly, if filed on time" tone="emerald" icon={ICONS.dollar} />
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="px-7 mt-5 border-b border-gray-200">
+              <div className="flex gap-6">
+                {[['worklist', 'Renewal Worklist'], ['audit', 'Audit Log']].map(([key, lbl]) => (
+                  <button key={key} onClick={() => setTab(key)}
+                    className={'pb-3 -mb-px text-[13px] font-medium border-b-2 transition-colors ' +
+                      (tab === key ? 'border-slate-900 text-slate-900' : 'border-transparent text-gray-500 hover:text-gray-700')}>
+                    {lbl}{key === 'audit' && audit.length > 0 ? ' (' + audit.length + ')' : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {tab === 'worklist' ? (
+              <>
+                {/* Toolbar */}
+                <div className="px-7 py-3 flex items-center gap-2.5 flex-wrap">
+                  <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by Patient Name, MRN, Drug…" />
+                  <FiltersPill count={triggerFilter !== 'All triggers' ? 1 : 0} />
+                  <Dropdown label="Trigger type" value={triggerFilter}
+                    options={['All triggers', 'Auth expiring', 'Insurance expiring', 'Regimen change']}
+                    onChange={(v) => { setTriggerFilter(v); setPage(1); }} />
+                  <div className="ml-auto flex items-center gap-2.5">
+                    {selectedCount > 0 && (
+                      <span className="text-[12.5px] text-gray-500">{selectedCount} selected</span>
+                    )}
+                    {selectedCount > 0 && (
+                      <button onClick={() => openDismiss('bulk')}
+                        className="h-9 px-3 rounded-lg border border-gray-300 bg-white text-[13px] text-gray-700 hover:bg-gray-50">
+                        Dismiss selected
+                      </button>
+                    )}
+                    <SplitButton
+                      label={selectedCount > 0 ? 'Approve selected (' + selectedCount + ')' : 'Approve selected'}
+                      onClick={() => selectedCount > 0 ? approve(Array.from(selected)) : pushToast('Select one or more rows to approve.', 'info')}
+                      menu={[
+                        { label: 'Approve & file all on-track', onClick: () => approve(rows.filter(r => !r.suppress && r.workflowState === 'monitoring' && deriveStatus(r).status !== 'Lapsed').map(r => r.id)) },
+                        { label: 'Approve only ≤ 14 days', onClick: () => approve(rows.filter(r => !r.suppress && r.workflowState === 'monitoring' && deriveStatus(r).daysLeft <= 14).map(r => r.id)) },
+                      ]} />
+                    <IconButton icon={ICONS.refresh} title="Refresh" onClick={() => pushToast('Worklist re-evaluated against watcher date.', 'info')} />
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="px-7 pb-6 flex-1 overflow-auto">
+                  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="text-[11px] text-gray-500 border-b border-gray-200 bg-gray-50/60">
+                          <th className="w-10 px-3 py-2.5"><Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleAll} /></th>
+                          <th className="px-3 py-2.5 font-medium">Patient Name</th>
+                          <th className="px-3 py-2.5 font-medium">Drug</th>
+                          <th className="px-3 py-2.5 font-medium">Payer</th>
+                          <th className="px-3 py-2.5 font-medium">Trigger</th>
+                          <th className="px-3 py-2.5 font-medium">Trigger date</th>
+                          <th className="px-3 py-2.5 font-medium">Days left</th>
+                          <th className="px-3 py-2.5 font-medium">Status</th>
+                          <th className="px-3 py-2.5 font-medium">Recommendation</th>
+                          <th className="px-3 py-2.5 font-medium text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageRows.map(r => {
+                          const { status, daysLeft } = deriveStatus(r);
+                          const done = r.workflowState === 'filed' || r.workflowState === 'dismissed';
+                          return (
+                            <tr key={r.id} className={'border-b border-gray-100 last:border-0 hover:bg-slate-50/60 ' + (done ? 'opacity-60' : '')}>
+                              <td className="px-3 py-3 align-middle">
+                                <Checkbox
+                                  checked={selected.has(r.id)}
+                                  onChange={() => toggleOne(r.id)}
+                                />
+                              </td>
+                              <td className="px-3 py-3 align-middle">
+                                <div className="text-[12.5px] font-medium text-gray-900">{r.name}</div>
+                                <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-1">
+                                  MRN : {r.mrn}
+                                  <Icon path={ICONS.copy} className="w-3 h-3 text-gray-300" />
+                                </div>
+                              </td>
+                              <td className="px-3 py-3 align-middle">
+                                <div className="text-[13px] text-gray-800">{r.brand}</div>
+                                <div className="text-[11px] text-gray-400">{r.generic}</div>
+                              </td>
+                              <td className="px-3 py-3 align-middle text-[12.5px] text-gray-600 max-w-[170px]">{r.payer}</td>
+                              <td className="px-3 py-3 align-middle"><TriggerPill trigger={r.trigger} /></td>
+                              <td className="px-3 py-3 align-middle text-[12.5px] text-gray-600 whitespace-nowrap">{fmtDate(r.triggerDate)}</td>
+                              <td className="px-3 py-3 align-middle whitespace-nowrap"><DaysLeft days={daysLeft} status={status} /></td>
+                              <td className="px-3 py-3 align-middle"><StatusPill status={status} /></td>
+                              <td className="px-3 py-3 align-middle text-[12px] text-gray-600 max-w-[200px]">{recommendationFor(r)}</td>
+                              <td className="px-3 py-3 align-middle">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  {!done && !r.suppress && (
+                                    <button onClick={() => approve(r.id)}
+                                      className="h-7 px-3 rounded-md bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800">Approve</button>
+                                  )}
+                                  {!done && r.suppress && (
+                                    <button onClick={() => approve(r.id)} title="Suppressed — review before filing"
+                                      className="h-7 px-3 rounded-md bg-gray-100 text-gray-400 text-[12px] font-medium cursor-not-allowed">Approve</button>
+                                  )}
+                                  {!done && (
+                                    <button onClick={() => openDismiss(r.id)}
+                                      className="h-7 px-2.5 rounded-md border border-gray-300 text-gray-600 text-[12px] hover:bg-gray-50">Dismiss</button>
+                                  )}
+                                  {done && (
+                                    <span className="text-[12px] text-gray-400 mr-1">{r.workflowState === 'filed' ? 'Filed ✓' : 'Dismissed'}</span>
+                                  )}
+                                  <RowMenu items={[
+                                    { label: 'View renewal packet', onClick: () => pushToast('Drafted renewal packet preview (mock).', 'info') },
+                                    { label: 'View case timeline', onClick: () => pushToast('Reactive vs proactive timeline (mock).', 'info') },
+                                    { label: 'Snooze 7 days', onClick: () => pushToast('Snoozed ' + r.name + ' for 7 days (mock).', 'info') },
+                                    { label: 'Dismiss…', danger: true, onClick: () => openDismiss(r.id) },
+                                  ]} />
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {pageRows.length === 0 && (
+                          <tr><td colSpan={10} className="px-3 py-10 text-center text-[13px] text-gray-400">No cases match your filters.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Footer / pagination */}
+                  <div className="flex items-center justify-between mt-3 text-[12.5px] text-gray-500">
+                    <Pagination page={safePage} totalPages={totalPages} onPage={setPage} />
+                    <span>Showing {filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length} items</span>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <AuditLog audit={audit} rows={rows} />
+            )}
+
+            {/* Dismiss modal */}
+            {dismissTarget && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 ag-fade" onClick={() => setDismissTarget(null)}>
+                <div className="bg-white rounded-xl shadow-xl w-[420px] p-5" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="text-[15px] font-semibold text-gray-900">Dismiss {dismissTarget === 'bulk' ? selected.size + ' case(s)' : 'case'}</h3>
+                  <p className="text-[12.5px] text-gray-500 mt-1">A reason is required and will be written to the audit log.</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {['Therapy discontinued', 'Patient transferred', 'Duplicate / already filed', 'Disease progressed'].map(opt => (
+                      <button key={opt} onClick={() => setDismissReason(opt)}
+                        className={'text-left px-2.5 py-2 rounded-lg border text-[12px] ' + (dismissReason === opt ? 'border-slate-900 bg-slate-50 text-slate-900' : 'border-gray-200 text-gray-600 hover:bg-gray-50')}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea value={dismissReason} onChange={(e) => setDismissReason(e.target.value)}
+                    placeholder="Or type a reason…" rows={2}
+                    className="mt-3 w-full px-3 py-2 rounded-lg border border-gray-300 text-[13px] focus:outline-none focus:ring-2 focus:ring-slate-200" />
+                  <div className="mt-4 flex justify-end gap-2">
+                    <button onClick={() => setDismissTarget(null)} className="h-9 px-4 rounded-lg border border-gray-300 text-[13px] text-gray-700 hover:bg-gray-50">Cancel</button>
+                    <button onClick={confirmDismiss} className="h-9 px-4 rounded-lg bg-red-600 text-white text-[13px] font-medium hover:bg-red-500">Dismiss with reason</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function AuditLog({ audit, rows }) {
+        const byId = useMemo(() => Object.fromEntries(rows.map(r => [r.id, r])), [rows]);
+        const eventTone = { approved: 'emerald', filed: 'blue', dismissed: 'red', trigger_detected: 'amber' };
+        return (
+          <div className="px-7 py-4 flex-1 overflow-auto">
+            <div className="bg-white border border-gray-200 rounded-xl">
+              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h3 className="text-[14px] font-semibold text-gray-900">Audit Log</h3>
+                  <p className="text-[12px] text-gray-500">Every approval / dismissal is attributable and time-stamped. Nothing is auto-filed.</p>
+                </div>
+                <span className="text-[12px] text-gray-400">{audit.length} events</span>
+              </div>
+              {audit.length === 0 ? (
+                <div className="px-4 py-12 text-center text-[13px] text-gray-400">
+                  No actions yet. Approve or dismiss a case in the worklist to populate the log.
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-100">
+                  {audit.slice().reverse().map((e, i) => {
+                    const r = byId[e.caseId];
+                    return (
+                      <li key={i} className="px-4 py-3 flex items-start gap-3">
+                        <span className="mt-0.5"><Badge tone={eventTone[e.event] || 'gray'}>{e.event}</Badge></span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] text-gray-800">
+                            {r ? <span className="font-medium">{r.name}</span> : <span className="font-medium">{e.caseId || 'system'}</span>}
+                            <span className="text-gray-400"> · {e.caseId}</span>
+                          </div>
+                          <div className="text-[12px] text-gray-500 mt-0.5">{e.detail}</div>
+                        </div>
+                        <div className="text-right whitespace-nowrap">
+                          <div className="text-[11px] text-gray-400">{new Date(e.ts).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                          <div className="text-[10px] text-gray-300 mt-0.5">actor: {e.actor}</div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      function Pagination({ page, totalPages, onPage }) {
+        const pages = [];
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+        return (
+          <div className="flex items-center gap-1">
+            <button disabled={page <= 1} onClick={() => onPage(page - 1)}
+              className={'inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-[12.5px] ' + (page <= 1 ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100')}>
+              <Icon path={<path d="M15 18l-6-6 6-6"/>} className="w-4 h-4" /> Previous
+            </button>
+            {pages.map(p => (
+              <button key={p} onClick={() => onPage(p)}
+                className={'h-8 min-w-8 px-2.5 rounded-md text-[12.5px] ' + (p === page ? 'bg-slate-900 text-white font-medium' : 'text-gray-600 hover:bg-gray-100')}>{p}</button>
+            ))}
+            <button disabled={page >= totalPages} onClick={() => onPage(page + 1)}
+              className={'inline-flex items-center gap-1 h-8 px-2.5 rounded-md text-[12.5px] ' + (page >= totalPages ? 'text-gray-300' : 'text-gray-600 hover:bg-gray-100')}>
+              Next <Icon path={<path d="M9 18l6-6-6-6"/>} className="w-4 h-4" />
+            </button>
+          </div>
+        );
+      }
+
+      /* =====================================================================
+       * SFTP ORDERS (stub) — replicates the reference shell so the product
+       * feels real. Static mocked rows.
+       * ===================================================================== */
+      const SFTP_ROWS = [
+        { name:'SALEM, MAHMOUD', mrn:'2602273506', dob:'04/14/2002', drug:'Zepbound', cmm:'BFYEFLVL', stp:'1st STP Out…', resp:'Drug Not Covered', cmmS:'Success', note:'Success', letter:'Success', sftp:'Not Sent' },
+        { name:'AKINBEBIJE, CHRI…', mrn:'2605050040', dob:'10/14/1975', drug:'Venofer', cmm:'BNRW8TMH', stp:'1st STP Out…', resp:'Denied', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+        { name:'CARMAN, JAMES', mrn:'2606040096', dob:'08/09/1968', drug:'Oxaliplatin', cmm:'BVBFNQRE', stp:'Sent To Plan', resp:'Approved', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+        { name:'DENNIS, TAMESHA', mrn:'3520060', dob:'03/15/1974', drug:'Ozempic', cmm:'BFPN9UR3', stp:'1st STP Out…', resp:'Approved', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+        { name:'JACOBUS, DENNIS', mrn:'3609640', dob:'04/09/1967', drug:'Econazole', cmm:'BEEU42PN', stp:'Sent To Plan', resp:'Pending', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+        { name:'BAGLEY, KATHLEEN', mrn:'7023165', dob:'08/09/1965', drug:'Ozempic', cmm:'B43FU44N', stp:'1st STP Out…', resp:'--', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+        { name:'DUFFY, COLETTE', mrn:'7099822', dob:'12/02/1975', drug:'Zepbound', cmm:'BAE8KXKR', stp:'Sent To Plan', resp:'Auth Not Required', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+        { name:'HILL, KRISTINE', mrn:'7833884', dob:'02/15/1984', drug:'Nurtec', cmm:'BJ8FL9LV', stp:'1st STP Out…', resp:'Drug Not Covered', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+        { name:'BEAUVIL, RICARDEL', mrn:'8041419', dob:'02/26/1971', drug:'Tamsulosin', cmm:'BLDRB4ET', stp:'1st STP Out…', resp:'Drug Not Covered', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+        { name:'SANTOS, BELKY', mrn:'8187127', dob:'04/23/1989', drug:'Venofer', cmm:'BHHBAN9K', stp:'Sent To Plan', resp:'Approved', cmmS:'Success', note:'Not Started', letter:'Not Started', sftp:'Not Sent' },
+      ];
+
+      function RespText({ value }) {
+        const greens = ['Approved', 'Auth Not Required'];
+        const reds = ['Denied', 'Drug Not Covered'];
+        let cls = 'text-gray-400';
+        if (greens.includes(value)) cls = 'text-emerald-600';
+        else if (reds.includes(value)) cls = 'text-red-600';
+        else if (value === 'Pending') cls = 'text-amber-600';
+        return <span className={cls + ' text-[12px] font-medium'}>{value}</span>;
+      }
+      function SftpBadge({ value }) {
+        if (value === 'Success') return <Badge tone="green">Success</Badge>;
+        if (value === 'Not Sent') return <Badge tone="darkfill">Not Sent</Badge>;
+        return <Badge tone="gray">{value}</Badge>;
+      }
+
+      function SftpOrders() {
+        return (
+          <div className="flex-1 flex flex-col min-w-0">
+            <div className="px-7 pt-6 pb-3"><h1 className="text-[20px] font-semibold text-gray-900">SFTP Orders</h1></div>
+            <div className="px-7 py-2 flex items-center gap-2.5 flex-wrap">
+              <SearchInput value="" onChange={() => {}} placeholder="Search by Patient Name, Member ID…" />
+              <FiltersPill count={0} />
+              <div className="ml-auto flex items-center gap-2.5">
+                <button className="h-9 px-4 rounded-lg border border-gray-300 bg-white text-[13px] text-gray-700 hover:bg-gray-50">Actions</button>
+                <Dropdown label="" value="SFTP Summary" options={['SFTP Summary', 'CMM Summary']} onChange={() => {}} />
+                <SplitButton label="Send to SFTP" onClick={() => {}} menu={[{ label: 'Send selected' }, { label: 'Send all' }]} />
+                <IconButton icon={ICONS.refresh} title="Refresh" onClick={() => {}} />
+              </div>
+            </div>
+            <div className="px-7 pb-6 flex-1 overflow-auto">
+              <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[1100px]">
+                  <thead>
+                    <tr className="text-[11px] text-gray-500 border-b border-gray-200 bg-gray-50/60">
+                      <th className="w-9 px-3 py-2.5"></th>
+                      {['Batch','DOW','Patient Name','DOB','Drug','CoverMyMed#','2nd STP Status','Response Status','Add','POC','CMM','Text Note','Letter Upload','SFTP',''].map((h,i)=>(
+                        <th key={i} className="px-3 py-2.5 font-medium whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {SFTP_ROWS.map((r, i) => (
+                      <tr key={i} className="border-b border-gray-100 last:border-0 hover:bg-slate-50/60">
+                        <td className="px-3 py-3 text-gray-300"><Icon path={ICONS.copy} className="w-4 h-4" /></td>
+                        <td className="px-3 py-3 text-[12px] text-gray-600 whitespace-nowrap">20260618_1205</td>
+                        <td className="px-3 py-3 text-[12px] text-gray-600 whitespace-nowrap">06/18/20…</td>
+                        <td className="px-3 py-3">
+                          <div className="text-[12.5px] font-medium text-gray-900 whitespace-nowrap">{r.name}</div>
+                          <div className="text-[11px] text-gray-400">MRN : {r.mrn}</div>
+                        </td>
+                        <td className="px-3 py-3 text-[12px] text-gray-600 whitespace-nowrap">{r.dob}</td>
+                        <td className="px-3 py-3 text-[12px] text-gray-600">{r.drug}</td>
+                        <td className="px-3 py-3 text-[12px] text-gray-600">{r.cmm}</td>
+                        <td className="px-3 py-3 text-[12px] text-gray-500 whitespace-nowrap">{r.stp}</td>
+                        <td className="px-3 py-3"><RespText value={r.resp} /></td>
+                        <td className="px-3 py-3"><button className="h-6 px-3 rounded bg-slate-800 text-white text-[11px]">Edit</button></td>
+                        <td className="px-3 py-3"></td>
+                        <td className="px-3 py-3"><SftpBadge value={r.cmmS} /></td>
+                        <td className="px-3 py-3"><SftpBadge value={r.note} /></td>
+                        <td className="px-3 py-3"><SftpBadge value={r.letter} /></td>
+                        <td className="px-3 py-3"><SftpBadge value={r.sftp} /></td>
+                        <td className="px-3 py-3"><RowMenu items={[{ label: 'View order' }, { label: 'Resend' }]} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex items-center justify-between mt-3 text-[12.5px] text-gray-500">
+                <Pagination page={1} totalPages={4} onPage={() => {}} />
+                <span>Showing 1–10 of 312 items</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      /* =====================================================================
+       * SHELL
+       * ===================================================================== */
+      function Sidebar({ view, setView }) {
+        const items = [
+          { key: 'worklists', label: 'Worklists', icon: ICONS.worklists },
+          { key: 'sftp', label: 'Delivery', icon: ICONS.delivery },
+          { key: 'calling', label: 'Calling', icon: ICONS.calling },
+          { key: 'status', label: 'Status', icon: ICONS.status },
+          { key: 'config', label: 'Config', icon: ICONS.config },
+        ];
+        return (
+          <aside className="w-[74px] shrink-0 bg-risaink flex flex-col items-stretch px-2 py-3">
+            <div className="text-white font-bold tracking-tight text-[15px] text-center py-2 mb-2">RISA</div>
+            <nav className="flex flex-col gap-1">
+              {items.map(it => (
+                <NavItem key={it.key} icon={it.icon} label={it.label}
+                  active={view === it.key}
+                  onClick={() => (it.key === 'sftp' ? setView('sftp') : null)} />
+              ))}
+              <div className="my-1 mx-3 border-t border-white/10" />
+              <NavItem icon={ICONS.guardian} label="Auth Guardian"
+                active={view === 'guardian'} onClick={() => setView('guardian')} />
+            </nav>
+            <div className="mt-auto flex flex-col gap-1 pt-3">
+              <div className="mx-3 border-t border-white/10 mb-1" />
+              <NavItem icon={ICONS.user} label="Account" active={false} onClick={() => {}} />
+              <NavItem icon={ICONS.logout} label="Logout" active={false} onClick={() => {}} />
+            </div>
+          </aside>
+        );
+      }
+
+      function Toasts({ toasts }) {
+        return (
+          <div className="fixed bottom-5 right-5 z-[60] flex flex-col gap-2">
+            {toasts.map(t => {
+              const tone = { success: 'bg-emerald-600', warn: 'bg-amber-600', info: 'bg-slate-800', error: 'bg-red-600' }[t.kind] || 'bg-slate-800';
+              return (
+                <div key={t.id} className={'ag-toast text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg max-w-[360px] ' + tone}>
+                  {t.msg}
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      function App() {
+        const [view, setView] = useState('guardian');
+        const [rows, setRows] = useState(() => RAW_ROWS.map(r => ({ ...r, workflowState: 'monitoring', dismissReason: null })));
+        const [audit, setAudit] = useState([]);
+        const [toasts, setToasts] = useState([]);
+
+        function log(event, caseId, actor, detail) {
+          setAudit(prev => [...prev, { ts: new Date().toISOString(), event, caseId, actor, detail }]);
+        }
+        function pushToast(msg, kind = 'info') {
+          const id = Math.random().toString(36).slice(2);
+          setToasts(prev => [...prev, { id, msg, kind }]);
+          setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3200);
+        }
+
+        return (
+          <div className="h-full flex bg-gray-100">
+            <Sidebar view={view} setView={setView} />
+            <main className="flex-1 flex min-w-0 bg-white m-0">
+              {view === 'guardian'
+                ? <AuthGuardian rows={rows} setRows={setRows} audit={audit} log={log} pushToast={pushToast} />
+                : <SftpOrders />}
+            </main>
+            <Toasts toasts={toasts} />
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
   </body>
 </html>

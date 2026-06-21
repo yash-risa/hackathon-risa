@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Risa — Auth Guardian</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #111a2e;
+        --panel-2: #16223c;
+        --line: #233351;
+        --ink: #e8eefb;
+        --muted: #93a4c4;
+        --brand: #4f8cff;
+        --brand-2: #7c5cff;
+        --green: #2fd27a;
+        --amber: #ffb547;
+        --red: #ff5d6c;
+        --slate: #64748b;
+        --radius: 14px;
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: radial-gradient(1200px 600px at 80% -10%, #18254400, #0b1220 60%), var(--bg);
+        color: var(--ink);
+        font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        min-height: 100vh;
+      }
+      .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 22px 60px; }
+
+      /* Header */
+      header.topbar {
+        display: flex; align-items: center; gap: 14px;
+        padding: 14px 18px; background: linear-gradient(90deg, #14213d, #111a2e);
+        border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+      }
+      .logo {
+        width: 40px; height: 40px; border-radius: 11px;
+        background: linear-gradient(135deg, var(--brand), var(--brand-2));
+        display: grid; place-items: center; font-weight: 800; color: white; letter-spacing: .5px;
+      }
+      .brand h1 { font-size: 18px; margin: 0; font-weight: 700; }
+      .brand p { margin: 0; color: var(--muted); font-size: 12px; }
+      .topbar .spacer { flex: 1; }
+      .today-pill {
+        background: var(--panel-2); border: 1px solid var(--line); padding: 7px 12px;
+        border-radius: 999px; color: var(--muted); font-size: 12px;
+      }
+      .today-pill b { color: var(--ink); }
+
+      /* Tabs */
+      nav.tabs { display: flex; gap: 8px; margin: 18px 0 16px; flex-wrap: wrap; }
+      nav.tabs button {
+        background: var(--panel); color: var(--muted); border: 1px solid var(--line);
+        padding: 9px 16px; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px;
+        transition: all .15s;
+      }
+      nav.tabs button:hover { color: var(--ink); border-color: #2f456b; }
+      nav.tabs button.active { background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: white; border-color: transparent; }
+      .tab-badge { background: rgba(255,255,255,.18); border-radius: 999px; padding: 1px 8px; margin-left: 6px; font-size: 11px; }
+
+      /* Cards / panels */
+      .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+      .panel .phead { padding: 16px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 12px; }
+      .phead h2 { margin: 0; font-size: 15px; }
+      .phead .sub { color: var(--muted); font-size: 12px; }
+      .phead .spacer { flex: 1; }
+
+      .btn {
+        border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+        padding: 7px 13px; border-radius: 9px; cursor: pointer; font-weight: 600; font-size: 12.5px;
+      }
+      .btn:hover { border-color: var(--brand); }
+      .btn.primary { background: linear-gradient(135deg, var(--brand), var(--brand-2)); border-color: transparent; color: white; }
+      .btn.ghost { background: transparent; }
+      .btn.danger { color: var(--red); border-color: #4a2630; }
+      .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+      /* Table */
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      thead th {
+        text-align: left; color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase;
+        letter-spacing: .4px; padding: 11px 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel);
+      }
+      tbody td { padding: 11px 14px; border-bottom: 1px solid #1b2942; vertical-align: middle; }
+      tbody tr:hover { background: #131f38; }
+      .patient b { display: block; }
+      .patient small, .drug small, .payer small { color: var(--muted); }
+      .mono { font-variant-numeric: tabular-nums; }
+
+      .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 700; }
+      .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+      .pill.ontrack { color: var(--green); background: rgba(47,210,122,.12); }
+      .pill.atrisk { color: var(--amber); background: rgba(255,181,71,.12); }
+      .pill.lapsed { color: var(--red); background: rgba(255,93,108,.12); }
+      .pill.suppressed { color: #c9a3ff; background: rgba(124,92,255,.14); }
+      .pill.filed { color: var(--brand); background: rgba(79,140,255,.14); }
+      .pill.dismissed { color: var(--slate); background: rgba(100,116,139,.16); }
+
+      .reason-tag { font-size: 11px; color: var(--muted); }
+      .countdown { font-weight: 700; }
+      .countdown.neg { color: var(--red); }
+      .countdown.soon { color: var(--amber); }
+      .countdown.ok { color: var(--green); }
+
+      .rowact { display: flex; gap: 6px; }
+
+      /* Metric cards */
+      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; padding: 18px; }
+      .metric { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 15px; }
+      .metric .label { color: var(--muted); font-size: 12px; }
+      .metric .value { font-size: 26px; font-weight: 800; margin-top: 4px; }
+      .metric .value.good { color: var(--green); }
+      .metric .value.bad { color: var(--red); }
+      .metric .foot { color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+      .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 0 18px 18px; }
+      .compare .col { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+      .compare .col h3 { margin: 0 0 10px; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+      .dot { width: 10px; height: 10px; border-radius: 50%; }
+      .barrow { display: grid; grid-template-columns: 130px 1fr 56px; gap: 10px; align-items: center; margin: 10px 0; font-size: 12.5px; }
+      .bar { height: 14px; border-radius: 7px; background: #0d1830; overflow: hidden; }
+      .bar > span { display: block; height: 100%; border-radius: 7px; }
+
+      .assumption { font-size: 11.5px; color: var(--muted); padding: 0 18px 16px; }
+      .assumption code { background: var(--panel-2); padding: 1px 6px; border-radius: 5px; color: #b9c8e6; }
+
+      /* Audit log */
+      .log { padding: 8px 0; max-height: 560px; overflow: auto; }
+      .logitem { display: grid; grid-template-columns: 150px 130px 1fr; gap: 12px; padding: 9px 18px; border-bottom: 1px solid #1b2942; font-size: 12.5px; }
+      .logitem .ts { color: var(--muted); font-variant-numeric: tabular-nums; }
+      .ev { font-weight: 700; }
+      .ev.trigger_detected { color: var(--amber); }
+      .ev.highlighted { color: var(--brand); }
+      .ev.approved { color: var(--green); }
+      .ev.filed { color: #7cd0ff; }
+      .ev.dismissed { color: var(--slate); }
+      .ev.outcome { color: var(--green); }
+
+      /* Timeline */
+      .timeline { padding: 18px; }
+      .tl-row { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin: 12px 0; }
+      .tl-row .who { font-weight: 700; }
+      .tl-track { position: relative; height: 46px; background: #0d1830; border-radius: 10px; border: 1px solid var(--line); }
+      .empty { padding: 40px; text-align: center; color: var(--muted); }
+
+      .note { background: var(--panel-2); border: 1px dashed var(--line); border-radius: 10px; padding: 14px; white-space: pre-wrap; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: #c7d6f5; margin: 0 18px 18px; }
+      .footer { color: var(--muted); font-size: 11.5px; text-align: center; margin-top: 22px; }
+      dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); max-width: 520px; width: 92%; }
+      dialog::backdrop { background: rgba(4,8,16,.6); }
+      dialog h3 { margin-top: 0; }
+      dialog .opts { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+      dialog .opts label { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+      dialog .opts label:hover { border-color: var(--brand); }
+      .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="topbar">
+        <div class="logo">R</div>
+        <div class="brand">
+          <h1>Risa — Auth Guardian</h1>
+          <p>Proactive prior-authorization renewal for oral oncolytics</p>
+        </div>
+        <div class="spacer"></div>
+        <div class="today-pill">Watcher date: <b id="todayLabel">—</b></div>
+      </header>
+
+      <nav class="tabs" id="tabs"></nav>
+      <main id="view"></main>
+
+      <div class="footer">
+        100% synthetic, deterministic demo data — no real PHI. Built for the Risa Labs hackathon prototype.
+      </div>
+    </div>
+
+    <dialog id="dismissDialog">
+      <h3>Dismiss case — reason required</h3>
+      <p class="sub" id="dismissCaseLabel" style="color:var(--muted)"></p>
+      <div class="opts" id="dismissOpts"></div>
+      <div class="dlg-actions">
+        <button class="btn ghost" id="dismissCancel">Cancel</button>
+        <button class="btn danger" id="dismissConfirm">Dismiss & log</button>
+      </div>
+    </dialog>
+
+    <!-- Vendor libraries copied locally so the app runs offline from file:// .
+         The UI itself is dependency-free vanilla JS for maximum reliability. -->
+    <script src="data.js"></script>
+    <script src="engine.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
